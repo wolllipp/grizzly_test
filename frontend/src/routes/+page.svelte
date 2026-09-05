@@ -1,13 +1,14 @@
 <script>
+  import { fade } from 'svelte/transition'
   import FormField from '$lib/components/FormField.svelte'
   import PhoneField from '$lib/components/PhoneField.svelte'
   import MaritalStatusField from '$lib/components/MaritalStatusField.svelte'
   import {
     validateFirstName, validateLastName, validateMiddleName,
-    validateBirthDate, validateEmail, validateAbout
+    validateBirthDate, validateEmail, validatePhone, validateAbout
   } from '$lib/validation.js'
 
-  const API_URL = 'http://localhost:8000/submit.php'
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000/submit.php'
 
   let firstName = $state('')
   let lastName = $state('')
@@ -31,6 +32,7 @@
   function markTouched(field) {
     touched = { ...touched, [field]: true }
   }
+  let phonesTouched = $state(false)
 
   let errors = $derived({
     firstName: validateFirstName(firstName),
@@ -39,14 +41,27 @@
     birthDate: validateBirthDate(birthDate),
     email: validateEmail(email),
     about: validateAbout(about),
-    maritalStatus: maritalStatus ? null : 'Выберите семейное положение',
-    rules: isRulesAccepted ? null : 'Необходимо согласие с правилами',
+    phone: (() => {
+      const filledPhones = phones.filter(p => p.phone.trim())
+      if (filledPhones.length === 0) return null
+      for (const p of filledPhones) {
+        const err = validatePhone(p.phone, p.country)
+        if (err) return err
+      }
+      return null
+    })(),
+    maritalStatus: maritalStatus ? null : 'Wybierz stan cywilny',
+    rules: isRulesAccepted ? null : 'Zaakceptuj zasady',
     contact: (email.trim() || phones.some(p => p.phone.trim()))
       ? null
-      : 'Укажите email или телефон'
+      : 'Podaj email lub telefon'
   })
 
-  let isFormValid = $derived(Object.values(errors).every(e => e === null))
+  let isFormValid = $derived((() => {
+    const { contact, ...rest } = errors
+    const hasContact = !!(email.trim() || phones.some(p => p.phone.trim()))
+    return hasContact && Object.values(rest).every(e => e === null)
+  })())
 
   let submitted = $state(false)
   let submitting = $state(false)
@@ -62,6 +77,7 @@
   async function handleSubmit(e) {
     e.preventDefault()
     touched = Object.fromEntries(Object.keys(errors).map(k => [k, true]))
+    phonesTouched = true
     if (!isFormValid) return
 
     submitting = true
@@ -93,12 +109,12 @@
         submitted = true
       } else if (response.status === 422) {
         serverErrors = data.errors || {}
-        submitError = 'Проверьте правильность заполнения полей'
+        submitError = 'Sprawdź poprawność wypełnionych pól'
       } else {
-        submitError = 'Ошибка сервера, попробуйте позже'
+        submitError = 'Błąd serwera, spróbuj później'
       }
     } catch (err) {
-      submitError = 'Не удалось отправить форму. Проверьте подключение.'
+      submitError = 'Nie udało się wysłać formularza. Sprawdź połączenie.'
       console.error(err)
     } finally {
       submitting = false
@@ -135,8 +151,8 @@
   <div class='form'>
     <div class='form-box'>
       {#if submitted}
-        <div class='form-success'>
-          <p>Успешно</p>
+        <div class='form-success' transition:fade>
+          <p>Wysłano pomyślnie</p>
         </div>
       {:else}
         <div class='form-header'>
@@ -178,18 +194,19 @@
                     canRemove={true}
                     onAdd={addPhone}
                     onRemove={() => removePhone(i)}
+                    onblur={() => { phonesTouched = true }}
+                    error={phonesTouched ? errors.phone : null}
                   />
                 {/each}
               {/if}
             </div>
-            {#if touched.contact && errors.contact}
+            {#if (touched.email || touched.contact || phones.some(p => p.phone.trim())) && errors.contact}
               <p class='field-error'>{errors.contact}</p>
             {/if}
 
-            <MaritalStatusField bind:value={maritalStatus} />
-            {#if touched.maritalStatus && errors.maritalStatus}
-              <p class='field-error'>{errors.maritalStatus}</p>
-            {/if}
+            <MaritalStatusField bind:value={maritalStatus}
+              error={touched.maritalStatus ? errors.maritalStatus : null}
+              onblur={() => markTouched('maritalStatus')} />
           </div>
 
           <div class='textarea-field'>
@@ -204,6 +221,9 @@
               placeholder='O mnie'
             ></textarea>
           </div>
+          {#if touched.about && errors.about}
+            <p class='field-error'>{errors.about}</p>
+          {/if}
 
           {#if submitError}
             <p class='field-error'>{submitError}</p>
@@ -216,6 +236,9 @@
                 <span class='form-checkbox__box'></span>
                 <span class='form-checkbox__text'>Przeczytałem zasady</span>
               </label>
+              {#if touched.rules && errors.rules}
+                <p class='field-error'>{errors.rules}</p>
+              {/if}
             </div>
             <button type='submit' class='form-button__submit' class:form-button__submit--active={isFormValid}
               disabled={!isFormValid || submitting}>
@@ -245,6 +268,12 @@
     height: 104px;
     justify-content: center;
     width: 232px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .courier-card:hover {
+    box-shadow: 0 4px 32px 0 #00000033;
+    transform: translateY(-2px);
   }
 
   .courier-card img {
@@ -261,8 +290,8 @@
   .boxes { align-self: center; width: 100%; }
 
   .boxes h2 {
-    color: #2e2e2e;
-    font-family: 'Averta CY', sans-serif;
+    color: var(--color-text);
+    font-family: var(--font-primary);
     font-size: 40px;
     font-weight: 600;
     letter-spacing: 0;
@@ -297,7 +326,7 @@
   }
 
   .form-box {
-    background-color: #343434cc;
+    background-color: var(--color-form-bg);
     border-radius: 5px;
     box-sizing: border-box;
     display: flex;
@@ -316,8 +345,8 @@
   }
 
   .form-success p {
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 32px;
     font-weight: 700;
   }
@@ -331,8 +360,8 @@
   }
 
   .form-header h2 {
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 32px;
     font-weight: 700;
     margin: 0;
@@ -342,8 +371,8 @@
   }
 
   .form-header p {
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 16px;
     font-weight: 400;
     letter-spacing: -0.07px;
@@ -378,7 +407,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  border-bottom: 1px solid #ffffff99;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .phone-field--inert input {
@@ -389,8 +418,8 @@
   border: 0;
   outline: none;
   background: transparent;
-  color: #ffffff;
-  font-family: 'Averta CY', Arial, sans-serif;
+  color: var(--color-white);
+  font-family: var(--font-primary);
   font-size: 16px;
   letter-spacing: -0.12px;
   cursor: default;
@@ -425,13 +454,13 @@
 
   .field-error {
     margin: 0;
-    color: #ff8080;
+    color: var(--color-error);
     font-size: 12px;
-    font-family: 'Averta CY', Arial, sans-serif;
+    font-family: var(--font-primary);
   }
 
   .textarea-field {
-    border-bottom: 1px solid #ffffff80;
+    border-bottom: 1px solid var(--color-border);
     box-sizing: border-box;
     display: flex;
     height: 32px;
@@ -443,8 +472,8 @@
     background-color: transparent;
     border: none;
     box-sizing: border-box;
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 16px;
     min-height: 32px;
     max-height: 168px;
@@ -455,13 +484,13 @@
   }
 
   .textarea-omnie.field--error {
-    border-bottom: 1px solid #ff4d4f;
+    border-bottom: 1px solid var(--color-error);
   }
 
   textarea::placeholder {
     background-color: transparent;
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 16px;
     font-weight: 400;
     letter-spacing: 0;
@@ -477,10 +506,11 @@
   }
 
   .form-checkbox {
-    align-items: center;
+    align-items: flex-start;
     cursor: pointer;
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .form-checkbox__label {
@@ -495,7 +525,7 @@
   .form-checkbox__box {
     align-items: center;
     background-color: transparent;
-    border: 1px solid #ffffff80;
+    border: 1px solid var(--color-border);
     border-radius: 3px;
     box-sizing: border-box;
     display: flex;
@@ -507,11 +537,11 @@
   }
 
   .form-checkbox__label:hover .form-checkbox__box {
-    border-color: #ffffff;
+    border-color: var(--color-white);
   }
 
   .form-checkbox__box::after {
-    background-color: #ffffff;
+    background-color: var(--color-white);
     border-radius: 2px;
     content: '';
     height: 8px;
@@ -527,8 +557,8 @@
   }
 
   .form-checkbox__text {
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 13px;
     font-weight: 400;
     letter-spacing: 0;
@@ -536,12 +566,12 @@
   }
 
   .form-button__submit {
-    background-color: #78599c;
+    background-color: var(--color-purple);
     border: 0;
     border-radius: 4px;
-    color: #ffffff;
+    color: var(--color-white);
     cursor: not-allowed;
-    font-family: 'Averta CY', Arial, sans-serif;
+    font-family: var(--font-primary);
     font-size: 16px;
     height: 48px;
     opacity: 0.5;
@@ -556,19 +586,75 @@
   }
 
   .form-button__submit--active:hover {
-    background-color: #6f39ae;
+    background-color: var(--color-purple-hover);
   }
 
   @media (max-width: 1200px) {
-    .content { padding-left: 24px; padding-right: 24px; }
-    .form { padding: 35px 24px; }
-    .form-box { width: 100%; }
-    .form-header { width: 100%; }
+    .content {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .form {
+      padding: 35px 24px;
+    }
+
+    .form-box {
+      width: 100%;
+    }
+
+    .form-header {
+      width: 100%;
+    }
   }
 
   @media (max-width: 900px) {
-    .content { grid-template-columns: 1fr; }
-    .couriers-grid { grid-template-columns: repeat(2, 1fr); }
-    .form-row { grid-template-columns: 1fr; }
+    .content {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    .photo {
+      display: none;
+    }
+
+    .form {
+      padding: 35px 16px;
+    }
+
+    .form-box {
+      width: 100%;
+      min-height: auto;
+      padding: 24px;
+    }
+
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .couriers-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .courier-card {
+      width: 100%;
+    }
+
+    .main {
+      padding-top: 40px;
+      gap: 40px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .couriers-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .form-submitting {
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
   }
 </style>

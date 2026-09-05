@@ -1,7 +1,7 @@
 <script>
   import { slide } from 'svelte/transition';
 
-  let { value = $bindable('') } = $props();
+  let { value = $bindable(''), error = null, onblur = () => {} } = $props();
 
   const options = ['Samotny/niezamężny', 'Żonaty', 'Rozwiedziony', 'Wdowiec/wdowa'];
 
@@ -28,7 +28,7 @@
 
 <label class="status-field" bind:this={fieldRef}>
   <span class="visually-hidden">Stan cywilny</span>
-  <button class="status-button" type="button" onclick={toggle}>
+  <button class="status-button" type="button" onclick={toggle} onblur={onblur} class:field--error={!!error}>
     <span>{value || 'Stan cywilny'}</span>
     <img src="/input_icons/Vector 9.svg" alt="" class:open />
   </button>
@@ -46,13 +46,17 @@
   {/if}
 </label>
 
+{#if error}
+  <span class="status-field-error">{error}</span>
+{/if}
+
 <style>
   .status-field {
     position: relative;
     display: block;
     width: 100%;
-    color: #fff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 16px;
   }
 
@@ -64,12 +68,16 @@
     height: 32px;
     padding: 0;
     border: 0;
-    border-bottom: 1px solid #ffffff99;
+    border-bottom: 1px solid var(--color-border);
     background: transparent;
     color: inherit;
     font: inherit;
     text-align: left;
     cursor: pointer;
+  }
+
+  .status-button.field--error {
+    border-bottom-color: var(--color-error);
   }
 
   .status-button span {
@@ -124,7 +132,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 2px solid #78599C;
+    border: 2px solid var(--color-purple);
     background: transparent;
     position: relative;
     flex-shrink: 0;
@@ -135,7 +143,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #78599C;
+    background: var(--color-purple);
     position: absolute;
     top: 50%;
     left: 50%;
@@ -145,6 +153,18 @@
 
   .status-option input:checked + .status-radio::after {
     transform: translate(-50%, -50%) scale(1);
+  }
+
+  .status-button:hover {
+    border-bottom-color: #ffffff;
+  }
+
+  .status-field-error {
+    display: block;
+    margin-top: 4px;
+    color: var(--color-error);
+    font-size: 12px;
+    font-family: var(--font-primary);
   }
 
   .visually-hidden {

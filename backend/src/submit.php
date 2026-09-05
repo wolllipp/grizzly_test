@@ -3,7 +3,8 @@
 require_once __DIR__ . '/db.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: http://localhost:5173'); 
+$corsOrigin = getenv('CORS_ORIGIN') ?: '*';
+header("Access-Control-Allow-Origin: $corsOrigin"); 
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -42,56 +43,56 @@ $errors = [];
 
 $firstName = trim($data['firstName'] ?? '');
 if ($firstName === '') {
-    $errors['firstName'] = 'Обязательное поле';
+    $errors['firstName'] = 'Pole wymagane';
 } elseif (mb_strlen($firstName) > 50) {
-    $errors['firstName'] = 'Максимум 50 символов';
+    $errors['firstName'] = 'Maksymalnie 50 znaków';
 }
 
 $lastName = trim($data['lastName'] ?? '');
 if ($lastName === '') {
-    $errors['lastName'] = 'Обязательное поле';
+    $errors['lastName'] = 'Pole wymagane';
 } elseif (mb_strlen($lastName) > 50) {
-    $errors['lastName'] = 'Максимум 50 символов';
+    $errors['lastName'] = 'Maksymalnie 50 znaków';
 }
 
 $middleName = trim($data['middleName'] ?? '');
 if ($middleName !== '' && mb_strlen($middleName) > 50) {
-    $errors['middleName'] = 'Максимум 50 символов';
+    $errors['middleName'] = 'Maksymalnie 50 znaków';
 }
 
 $birthDate = $data['birthDate'] ?? '';
 $birthDateObj = DateTime::createFromFormat('Y-m-d', $birthDate);
 if (!$birthDateObj) {
-    $errors['birthDate'] = 'Обязательное поле';
+    $errors['birthDate'] = 'Pole wymagane';
 } else {
     $today = new DateTime();
     $minDate = (new DateTime())->modify('-120 years');
     if ($birthDateObj > $today) {
-        $errors['birthDate'] = 'Дата не может быть в будущем';
+        $errors['birthDate'] = 'Data nie może być w przyszłości';
     } elseif ($birthDateObj < $minDate) {
-        $errors['birthDate'] = 'Некорректная дата';
+        $errors['birthDate'] = 'Nieprawidłowa data';
     }
 }
 
 $email = trim($data['email'] ?? '');
 if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $errors['email'] = 'Некорректный email';
+    $errors['email'] = 'Nieprawidłowy email';
 }
 
 $maritalStatus = trim($data['maritalStatus'] ?? '');
 $allowedStatuses = ['Samotny/niezamężny', 'Żonaty', 'Rozwiedziony', 'Wdowiec/wdowa'];
 if (!in_array($maritalStatus, $allowedStatuses, true)) {
-    $errors['maritalStatus'] = 'Выберите семейное положение';
+    $errors['maritalStatus'] = 'Wybierz stan cywilny';
 }
 
 $about = trim($data['about'] ?? '');
 if (mb_strlen($about) > 1000) {
-    $errors['about'] = 'Максимум 1000 символов';
+    $errors['about'] = 'Maksymalnie 1000 znaków';
 }
 
 $rulesAccepted = (bool) ($data['rulesAccepted'] ?? false);
 if (!$rulesAccepted) {
-    $errors['rules'] = 'Необходимо согласие с правилами';
+    $errors['rules'] = 'Zaakceptuj zasady';
 }
 
 $phones = $data['phones'] ?? [];
@@ -99,30 +100,35 @@ if (!is_array($phones)) {
     $phones = [];
 }
 if (count($phones) > 5) {
-    $errors['phones'] = 'Максимум 5 телефонов';
+    $errors['phones'] = 'Maksymalnie 5 telefonów';
 }
 
 $validPhones = [];
+$phoneIndex = 0;
 foreach ($phones as $p) {
     $phoneValue = trim($p['phone'] ?? '');
     $countryCode = $p['country'] ?? '';
     if ($phoneValue === '') {
+        $phoneIndex++;
         continue;
     }
     if (!in_array($countryCode, ['BY', 'RU'], true)) {
-        $errors['phones'] = 'Некорректный код страны';
+        $errors["phones[$phoneIndex]"] = 'Nieprawidłowy kod kraju';
+        $phoneIndex++;
         continue;
     }
     $digits = preg_replace('/\D/', '', $phoneValue);
     if (strlen($digits) < 9) {
-        $errors['phones'] = 'Некорректный номер телефона';
+        $errors["phones[$phoneIndex]"] = 'Nieprawidłowy numer telefonu';
+        $phoneIndex++;
         continue;
     }
     $validPhones[] = ['country' => $countryCode, 'phone' => $phoneValue];
+    $phoneIndex++;
 }
 
 if ($email === '' && count($validPhones) === 0) {
-    $errors['contact'] = 'Укажите email или телефон';
+    $errors['contact'] = 'Podaj email lub telefon';
 }
 
 if (!empty($errors)) {

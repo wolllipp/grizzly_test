@@ -4,7 +4,10 @@ require_once __DIR__ . '/config.php';
 
 function getDbConnection(): PDO
 {
-    $config = require __DIR__ . '/config.php';
+    static $config = null;
+    if ($config === null) {
+        $config = require __DIR__ . '/config.php';
+    }
     $db = $config['db'];
 
     $dsn = "pgsql:host={$db['host']};port={$db['port']};dbname={$db['name']}";

@@ -5,7 +5,9 @@
     canAdd = false,
     canRemove = false,
     onAdd = () => {},
-    onRemove = () => {}
+    onRemove = () => {},
+    onblur = () => {},
+    error = null
   } = $props();
 
   let selectingCountry = $state(false);
@@ -43,14 +45,20 @@
 
   let placeholder = $derived(country === 'BY' ? '+375 (__) ___ - __ - __' : '+7 (___) ___-__-__');
   let phoneCode = $derived(country === 'BY' ? '+375' : '+7');
+  let maxDigits = $derived(country === 'BY' ? 9 : 10);
 
   function handlePhoneInput(e) {
     const code = phoneCode;
-    const val = e.currentTarget.value;
+    let val = e.currentTarget.value;
     if (!val.startsWith(code)) {
-      e.currentTarget.value = code + ' ';
+      val = code + ' ';
     }
-    value = e.currentTarget.value;
+    const digits = val.replace(/\D/g, '').replace(/^7/, '').replace(/^375/, '');
+    if (digits.length > maxDigits) {
+      return;
+    }
+    e.currentTarget.value = val;
+    value = val;
   }
 
   function handlePhoneFocus(e) {
@@ -62,7 +70,7 @@
 
 <svelte:window onclick={handleWindowClick} onkeydown={handleWindowKeydown} />
 
-<div class="phone-field" bind:this={fieldRef}>
+<div class="phone-field" class:phone-field--error={!!error} bind:this={fieldRef}>
   {#if selectingCountry}
 		<div
 			class="phone-field__country-select"
@@ -98,14 +106,14 @@
 				<img src="/input_icons/Russia.svg" alt="Rosja" />
 			</button>
 		</div>
-		<input class="phone-field__input-shifted" type="tel" name="phone" placeholder={placeholder} oninput={handlePhoneInput} onfocus={handlePhoneFocus} />
+		<input class="phone-field__input-shifted" type="tel" name="phone" placeholder={placeholder} oninput={handlePhoneInput} onfocus={handlePhoneFocus} onblur={onblur} />
 	{:else}
     <div class="phone-field__phone-view">
       <button type="button" class="phone-field__flag-btn" onclick={(e) => { e.stopPropagation(); openCountryList(); }}>
         <img class="phone-field__flag" src="/input_icons/{country === 'BY' ? 'belarus' : 'Russia'}.svg" alt="" />
         <img class="phone-field__chevron" src="/input_icons/Vector 9.svg" alt="" />
       </button>
-      <input type="tel" name="phone" placeholder={placeholder} oninput={handlePhoneInput} onfocus={handlePhoneFocus} />
+      <input type="tel" name="phone" placeholder={placeholder} oninput={handlePhoneInput} onfocus={handlePhoneFocus} onblur={onblur} />
     </div>
   {/if}
 
@@ -119,6 +127,10 @@
   {/if}
 </div>
 
+{#if error}
+  <span class="phone-field-error">{error}</span>
+{/if}
+
 <style>
   .phone-field {
     position: relative;
@@ -126,7 +138,7 @@
     align-items: center;
     width: 100%;
     gap: 8px;
-    border-bottom: 1px solid #ffffff99;
+    border-bottom: 1px solid var(--color-border);
   }
 
   input {
@@ -137,8 +149,8 @@
     border: 0;
     outline: none;
     background: transparent;
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 16px;
     letter-spacing: -0.12px;
     flex: 1;
@@ -231,8 +243,8 @@
 }
 
 .phone-field__country-header span {
-  color: #ffffff;
-  font-family: 'Averta CY', Arial, sans-serif;
+  color: var(--color-white);
+  font-family: var(--font-primary);
   font-size: 14px;
 }
 
@@ -305,5 +317,17 @@
   @keyframes slideLeft {
     from { opacity: 0; transform: translateX(20px); }
     to { opacity: 1; transform: translateX(0); }
+  }
+
+  .phone-field--error {
+    border-bottom-color: var(--color-error);
+  }
+
+  .phone-field-error {
+    display: block;
+    margin-top: 4px;
+    color: var(--color-error);
+    font-size: 12px;
+    font-family: var(--font-primary);
   }
 </style>

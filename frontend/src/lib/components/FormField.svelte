@@ -58,11 +58,11 @@
     height: 32px;
     border: 0;
     padding: 0;
-    border-bottom: 1px solid #ffffff99;
+    border-bottom: 1px solid var(--color-border);
     outline: none;
     background: transparent;
-    color: #ffffff;
-    font-family: 'Averta CY', Arial, sans-serif;
+    color: var(--color-white);
+    font-family: var(--font-primary);
     font-size: 16px;
     letter-spacing: -0.12px;
   }
@@ -72,20 +72,24 @@
     opacity: 1;
   }
 
+  input:hover {
+    border-bottom-color: #ffffff;
+  }
+
   input:focus {
     border-bottom-color: #ffffff;
   }
 
   input.field--error {
-    border-bottom-color: #ff4d4f;
+    border-bottom-color: var(--color-error);
   }
 
   .field-error {
     display: block;
     margin-top: 4px;
-    color: #ff4d4f;
+    color: var(--color-error);
     font-size: 12px;
-    font-family: 'Averta CY', Arial, sans-serif;
+    font-family: var(--font-primary);
   }
 
   .visually-hidden {

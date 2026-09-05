@@ -107,9 +107,9 @@
 
 	.phone p {
 		margin: 0;
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-size: 16px;
-		color: #2E2E2E;
+		color: var(--color-text);
 		line-height: 120%;
 	}
 	.phone p{
@@ -123,9 +123,9 @@
 
 	.phone-link {
 		margin: 0;
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-size: 16px;
-		color: #78599C;
+		color: var(--color-purple);
 		line-height: 180%;
 		height: 24px;
 	}
@@ -133,6 +133,11 @@
 	.phone-link a {
 		color: inherit;
 		text-decoration: underline;
+		transition: color 0.2s ease;
+	}
+
+	.phone-link a:hover {
+		color: var(--color-text);
 	}
 
 	.mail{
@@ -146,9 +151,9 @@
 
 	.mail p {
 		margin: 0;
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-size: 16px;
-		color: #2E2E2E;
+		color: var(--color-text);
 		line-height: 170%;
 	}
 
@@ -160,9 +165,9 @@
 	
 	.map p{
 		margin: 0;
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-size: 16px;
-		color: #2E2E2E;
+		color: var(--color-text);
 		line-height: 1.5;
 	}
 
@@ -172,12 +177,12 @@
 	}
 
 	.second-column-header h2{
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-weight: 700;
 		font-size: 16px;
 		line-height: 150%;
 		letter-spacing: 0%;
-		color: #2E2E2E;
+		color: var(--color-text);
 		margin: 0;
 		padding-bottom: 32px;
 	}
@@ -189,13 +194,19 @@
 	}
 
 	.second-column-info p{
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-weight: 400;
 		font-size: 16px;
 		line-height: 130%;
 		letter-spacing: 0%;
-		color: #2E2E2E;
+		color: var(--color-text);
 		margin: 0;
+		transition: color 0.2s ease;
+		cursor: pointer;
+	}
+
+	.second-column-info p:hover {
+		color: var(--color-purple);
 	}
 
 	.second-column-footer{
@@ -204,12 +215,12 @@
 	}
 
 	.second-column-footer p{
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-weight: 400;
 		font-size: 16px;
 		line-height: 130%;
 		letter-spacing: 0%;
-		color: #78599C;
+		color: var(--color-purple);
 		margin: 0;
 	}
 
@@ -222,12 +233,18 @@
 
 	.third-column h3{
 		margin: 0;
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-weight: 700;
 		font-size: 16px;
 		line-height: 1.35;
 		letter-spacing: 0%;
-		color: #2E2E2E;
+		color: var(--color-text);
+		transition: color 0.2s ease;
+		cursor: pointer;
+	}
+
+	.third-column h3:hover {
+		color: var(--color-purple);
 	}
 
 	.forfth-column{
@@ -243,11 +260,11 @@
 	}
 
 	.forfth-column p{
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-weight: 400;
 		font-size: 16px;
 		line-height: 130%;
-		color: #BCBCBC;
+		color: var(--color-gray-light);
 		margin: 0;
 	}
 	
@@ -259,7 +276,7 @@
 	.footer-ending-info{
 		width: 100%;
 		box-sizing: border-box;
-		border-top: 1px solid #E8E8E8;
+		border-top: 1px solid var(--color-gray-border);
 		display: flex;
 		justify-content: space-between;
 	}
@@ -268,10 +285,16 @@
 		
 		text-decoration: underline;
 		margin: 0;
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-weight: 400;
 		font-size: 16px;
-		color: #333333;
+		color: var(--color-gray);
+		transition: color 0.2s ease;
+		cursor: pointer;
+	}
+
+	.footer-ending-header p:hover {
+		color: var(--color-purple);
 	}
 
 	.site-footer-info{
@@ -290,10 +313,38 @@
 
 	.site-footer-info p{
 		margin: 0;
-		font-family: 'Averta CY', Arial, sans-serif;
+		font-family: var(--font-primary);
 		font-weight: 400;
 		line-height: 2;
 		font-size: 16px;
-		color: #333333;
+		color: var(--color-gray);
+	}
+
+	@media (max-width: 900px) {
+		.footer-content {
+			flex-direction: column;
+			padding: 40px 16px;
+			gap: 32px;
+		}
+
+		.footer-ending {
+			padding: 0 16px;
+		}
+
+		.footer-ending-info {
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.nemer-logo {
+			padding-bottom: 24px;
+		}
+
+		.second-column,
+		.third-column,
+		.forfth-column {
+			width: 100%;
+			height: auto;
+		}
 	}
 </style>
