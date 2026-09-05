@@ -2,6 +2,12 @@
   import FormField from '$lib/components/FormField.svelte'
   import PhoneField from '$lib/components/PhoneField.svelte'
   import MaritalStatusField from '$lib/components/MaritalStatusField.svelte'
+  import {
+    validateFirstName, validateLastName, validateMiddleName,
+    validateBirthDate, validateEmail, validateAbout
+  } from '$lib/validation.js'
+
+  const API_URL = 'http://localhost:8000/submit.php'
 
   let firstName = $state('')
   let lastName = $state('')
@@ -10,10 +16,99 @@
   let email = $state('')
   let about = $state('')
   let isRulesAccepted = $state(false)
+  let maritalStatus = $state('')
 
-  let isFormValid = $derived(
-    isRulesAccepted && firstName && lastName && middleName && birthDate && email && about
-  )
+  let phones = $state([])
+
+  function addPhone() {
+    if (phones.length < 5) phones = [...phones, { country: 'BY', phone: '' }]
+  }
+  function removePhone(index) {
+    phones = phones.filter((_, i) => i !== index)
+  }
+
+  let touched = $state({})
+  function markTouched(field) {
+    touched = { ...touched, [field]: true }
+  }
+
+  let errors = $derived({
+    firstName: validateFirstName(firstName),
+    lastName: validateLastName(lastName),
+    middleName: validateMiddleName(middleName),
+    birthDate: validateBirthDate(birthDate),
+    email: validateEmail(email),
+    about: validateAbout(about),
+    maritalStatus: maritalStatus ? null : 'Выберите семейное положение',
+    rules: isRulesAccepted ? null : 'Необходимо согласие с правилами',
+    contact: (email.trim() || phones.some(p => p.phone.trim()))
+      ? null
+      : 'Укажите email или телефон'
+  })
+
+  let isFormValid = $derived(Object.values(errors).every(e => e === null))
+
+  let submitted = $state(false)
+  let submitting = $state(false)
+  let submitError = $state(null)
+  let serverErrors = $state({})
+
+  function handleFormKeydown(e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault()
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    touched = Object.fromEntries(Object.keys(errors).map(k => [k, true]))
+    if (!isFormValid) return
+
+    submitting = true
+    submitError = null
+    serverErrors = {}
+
+    const payload = {
+      firstName,
+      lastName,
+      middleName,
+      birthDate,
+      email,
+      maritalStatus,
+      about,
+      rulesAccepted: isRulesAccepted,
+      phones: phones.map(p => ({ country: p.country, phone: p.phone }))
+    }
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        submitted = true
+      } else if (response.status === 422) {
+        serverErrors = data.errors || {}
+        submitError = 'Проверьте правильность заполнения полей'
+      } else {
+        submitError = 'Ошибка сервера, попробуйте позже'
+      }
+    } catch (err) {
+      submitError = 'Не удалось отправить форму. Проверьте подключение.'
+      console.error(err)
+    } finally {
+      submitting = false
+    }
+  }
+
+  function handleTextareaInput(e) {
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 168) + 'px'
+  }
 </script>
 
 <div class='main'>
@@ -21,73 +116,114 @@
     <div class='boxes'>
       <h2>Nasi kurierzy</h2>
       <div class='couriers-grid'>
-        <div class='courier-card'>
-          <img src='/boxed/dpd.svg' alt='DPD' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/gls.svg' alt='GLS' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/dhl.svg' alt='DHL' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/shopify.svg' alt='Shopify' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/woocommerce.svg' alt='WooCommerce' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/prestashop.svg' alt='PrestaShop' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/ppl.svg' alt='PPL' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/slovenska-posta.svg' alt='Slovenska Posta' />
-        </div>
-        <div class='courier-card'>
-          <img src='/boxed/magento.svg' alt='Magento' />
-        </div>
+        <div class='courier-card'><img src='/boxed/dpd.svg' alt='DPD' /></div>
+        <div class='courier-card'><img src='/boxed/gls.svg' alt='GLS' /></div>
+        <div class='courier-card'><img src='/boxed/dhl.svg' alt='DHL' /></div>
+        <div class='courier-card'><img src='/boxed/shopify.svg' alt='Shopify' /></div>
+        <div class='courier-card'><img src='/boxed/woocommerce.svg' alt='WooCommerce' /></div>
+        <div class='courier-card'><img src='/boxed/prestashop.svg' alt='PrestaShop' /></div>
+        <div class='courier-card'><img src='/boxed/ppl.svg' alt='PPL' /></div>
+        <div class='courier-card'><img src='/boxed/slovenska-posta.svg' alt='Slovenska Posta' /></div>
+        <div class='courier-card'><img src='/boxed/magento.svg' alt='Magento' /></div>
       </div>
     </div>
     <div class='photo'>
       <img src='/content/Rectangle 1.png' alt='Kurier przygotowujący przesyłkę' />
     </div>
   </div>
+
   <div class='form'>
     <div class='form-box'>
-      <div class='form-header'>
-        <h2>Szukasz najlepszej oferty?</h2>
-        <p>Zostaw aplikację, a nasz menedżer skontaktuje się z Tobą w celu konsultacji</p>
-      </div>
-      <form class='form-content' action=''>
-        <div class='form-row'>
-          <FormField name='firstName' placeholder='Twoje imię' bind:value={firstName} />
-          <FormField name='lastName' placeholder='Twoje nazwisko' bind:value={lastName} />
-          <FormField name='middleName' placeholder='Twoje drugie imię' bind:value={middleName} />
+      {#if submitted}
+        <div class='form-success'>
+          <p>Успешно</p>
         </div>
-        <div class='form-column'>
-          <FormField type='date' name='birthDate' placeholder='Twoja data urodzenia' bind:value={birthDate} />
-          <FormField name='email' type='email' placeholder='E-mail' bind:value={email} />
-          <PhoneField />
-          <MaritalStatusField />
-        </div>
-        <div class='textarea-field'>
-          <textarea name='O mnie' id='1' class='textarea-omnie' placeholder='O mnie' bind:value={about}></textarea>
-        </div>
-        <div class='form-submitting'>
-          <div class='form-checkbox'>
-            <label class='form-checkbox__label'>
-              <input type='checkbox' id='rules' bind:checked={isRulesAccepted}>
-              <span class='form-checkbox__box'></span>
-              <span class='form-checkbox__text'>Przeczytałem zasady</span>
-            </label>
+      {:else}
+        <div class='form-header'>
+          <div class='form-header__first'>
+            <h2>Szukasz najlepszej oferty?</h2>
           </div>
-          <button type='submit' class='form-button__submit' class:form-button__submit--active={isFormValid}>
-            Wysłać
-          </button>
+          <p>Zostaw aplikację, a nasz menedżer skontaktuje się z Tobą w celu konsultacji</p>
         </div>
-      </form>
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <form class='form-content' onsubmit={handleSubmit} onkeydown={handleFormKeydown}>
+          <div class='form-row'>
+            <FormField name='firstName' placeholder='Twoje imię' bind:value={firstName}
+              error={touched.firstName ? (errors.firstName || serverErrors.firstName) : null} onblur={() => markTouched('firstName')} />
+            <FormField name='lastName' placeholder='Twoje nazwisko' bind:value={lastName}
+              error={touched.lastName ? (errors.lastName || serverErrors.lastName) : null} onblur={() => markTouched('lastName')} />
+            <FormField name='middleName' placeholder='Twoje drugie imię' bind:value={middleName}
+              error={touched.middleName ? (errors.middleName || serverErrors.middleName) : null} onblur={() => markTouched('middleName')} />
+          </div>
+
+          <div class='form-column'>
+            <FormField type='date' name='birthDate' placeholder='Twoja data urodzenia' bind:value={birthDate}
+              error={touched.birthDate ? (errors.birthDate || serverErrors.birthDate) : null} onblur={() => markTouched('birthDate')} />
+            <FormField name='email' type='email' placeholder='E-mail' bind:value={email}
+              error={touched.email ? (errors.email || errors.contact || serverErrors.email) : null} onblur={() => markTouched('email')} />
+            <div class='phones-list'>
+              {#if phones.length === 0}
+                <div class="phone-field phone-field--inert">
+                  <input type="text" placeholder="Telefon" readonly />
+                  <button type="button" class="phone-field__plus" aria-label="Dodaj numer" onclick={addPhone}>
+                    <img src="/input_icons/Vector.svg" alt="" />
+                  </button>
+                </div>
+              {:else}
+                {#each phones as _, i}
+                  <PhoneField
+                    bind:country={phones[i].country}
+                    bind:value={phones[i].phone}
+                    canAdd={i === phones.length - 1 && phones.length < 5}
+                    canRemove={true}
+                    onAdd={addPhone}
+                    onRemove={() => removePhone(i)}
+                  />
+                {/each}
+              {/if}
+            </div>
+            {#if touched.contact && errors.contact}
+              <p class='field-error'>{errors.contact}</p>
+            {/if}
+
+            <MaritalStatusField bind:value={maritalStatus} />
+            {#if touched.maritalStatus && errors.maritalStatus}
+              <p class='field-error'>{errors.maritalStatus}</p>
+            {/if}
+          </div>
+
+          <div class='textarea-field'>
+            <textarea
+              name='about'
+              maxlength="1000"
+              class='textarea-omnie'
+              class:field--error={touched.about && errors.about}
+              bind:value={about}
+              oninput={handleTextareaInput}
+              onblur={() => markTouched('about')}
+              placeholder='O mnie'
+            ></textarea>
+          </div>
+
+          {#if submitError}
+            <p class='field-error'>{submitError}</p>
+          {/if}
+
+          <div class='form-submitting'>
+            <div class='form-checkbox'>
+              <label class='form-checkbox__label'>
+                <input type='checkbox' id='rules' bind:checked={isRulesAccepted} onblur={() => markTouched('rules')}>
+                <span class='form-checkbox__box'></span>
+                <span class='form-checkbox__text'>Przeczytałem zasady</span>
+              </label>
+            </div>
+            <button type='submit' class='form-button__submit' class:form-button__submit--active={isFormValid}
+              disabled={!isFormValid || submitting}>
+              {submitting ? 'Wysyłanie...' : 'Wysłać'}
+            </button>
+          </div>
+        </form>
+      {/if}
     </div>
   </div>
 </div>
@@ -119,20 +255,10 @@
     width: auto;
   }
 
-  .photo {
-    width: fit-content;
-  }
+  .photo { width: fit-content; }
+  .photo img { display: block; height: auto; width: auto; }
 
-  .photo img {
-    display: block;
-    height: auto;
-    width: auto;
-  }
-
-  .boxes {
-    align-self: center;
-    width: 100%;
-  }
+  .boxes { align-self: center; width: 100%; }
 
   .boxes h2 {
     color: #2e2e2e;
@@ -166,7 +292,6 @@
     background-repeat: no-repeat;
     background-size: cover;
     box-sizing: border-box;
-    height: 700px;
     padding: 35px 860px 35px 340px;
     width: 100%;
   }
@@ -178,17 +303,30 @@
     display: flex;
     flex-direction: column;
     gap: 48px;
-    height: 630px;
+    min-height: 630px;
     padding: 40px;
-    position: static;
     width: 720px;
+  }
+
+  .form-success {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+  }
+
+  .form-success p {
+    color: #ffffff;
+    font-family: 'Averta CY', Arial, sans-serif;
+    font-size: 32px;
+    font-weight: 700;
   }
 
   .form-header {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    height: 82px;
+       height: 82px;
     width: 640px;
   }
 
@@ -197,6 +335,7 @@
     font-family: 'Averta CY', Arial, sans-serif;
     font-size: 32px;
     font-weight: 700;
+    margin: 0;
     letter-spacing: -0.2px;
     line-height: 170%;
     margin: 0;
@@ -228,6 +367,69 @@
     width: 100%;
   }
 
+  .phones-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .phone-field--inert {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-bottom: 1px solid #ffffff99;
+}
+
+.phone-field--inert input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #ffffff;
+  font-family: 'Averta CY', Arial, sans-serif;
+  font-size: 16px;
+  letter-spacing: -0.12px;
+  cursor: default;
+}
+
+.phone-field--inert input::placeholder {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.phone-field--inert .phone-field__plus {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.phone-field--inert .phone-field__plus img {
+  width: 24px;
+  height: 24px;
+}
+
+.phone-field--inert .phone-field__plus:hover {
+  opacity: 0.7;
+}
+
+  .field-error {
+    margin: 0;
+    color: #ff8080;
+    font-size: 12px;
+    font-family: 'Averta CY', Arial, sans-serif;
+  }
+
   .textarea-field {
     border-bottom: 1px solid #ffffff80;
     box-sizing: border-box;
@@ -244,13 +446,16 @@
     color: #ffffff;
     font-family: 'Averta CY', Arial, sans-serif;
     font-size: 16px;
-    font-weight: 400;
-    height: 32px;
-    letter-spacing: 0;
+    min-height: 32px;
+    max-height: 168px;
     line-height: 150%;
-    overflow: hidden;
+    overflow-y: auto;
     resize: none;
     width: 100%;
+  }
+
+  .textarea-omnie.field--error {
+    border-bottom: 1px solid #ff4d4f;
   }
 
   textarea::placeholder {
@@ -285,9 +490,7 @@
     gap: 8px;
   }
 
-  .form-checkbox__label input {
-    display: none;
-  }
+  .form-checkbox__label input { display: none; }
 
   .form-checkbox__box {
     align-items: center;
@@ -337,21 +540,35 @@
     border: 0;
     border-radius: 4px;
     color: #ffffff;
-    cursor: pointer;
+    cursor: not-allowed;
     font-family: 'Averta CY', Arial, sans-serif;
     font-size: 16px;
     height: 48px;
-    opacity: 0.8;
+    opacity: 0.5;
     padding: 12px 40px;
     transition: background-color 0.3s ease, opacity 0.3s ease;
     width: 200px;
   }
 
   .form-button__submit--active {
+    cursor: pointer;
     opacity: 1;
   }
 
   .form-button__submit--active:hover {
     background-color: #6f39ae;
+  }
+
+  @media (max-width: 1200px) {
+    .content { padding-left: 24px; padding-right: 24px; }
+    .form { padding: 35px 24px; }
+    .form-box { width: 100%; }
+    .form-header { width: 100%; }
+  }
+
+  @media (max-width: 900px) {
+    .content { grid-template-columns: 1fr; }
+    .couriers-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
   }
 </style>

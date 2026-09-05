@@ -9,7 +9,7 @@
 						<p>+48690590089</p>
 					</div>
 					<div class="phone-link">
-						<a href="">Zamów rozmowę</a>
+						<a href="#form">Zamów rozmowę</a>
 					</div>
 				</div>
 				<div class="mail">
@@ -128,6 +128,11 @@
 		color: #78599C;
 		line-height: 180%;
 		height: 24px;
+	}
+
+	.phone-link a {
+		color: inherit;
+		text-decoration: underline;
 	}
 
 	.mail{
