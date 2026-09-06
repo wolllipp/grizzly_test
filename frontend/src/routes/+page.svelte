@@ -284,8 +284,15 @@
     width: auto;
   }
 
-  .photo { width: fit-content; }
-  .photo img { display: block; height: auto; width: auto; }
+  .photo {
+    width: fit-content;
+  }
+
+  .photo img { 
+    display: block; 
+    height: auto; 
+    width: auto; 
+  }
 
   .boxes { align-self: center; width: 100%; }
 
@@ -403,54 +410,54 @@
   }
 
   .phone-field--inert {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
     border-bottom: 1px solid var(--color-border);
-}
+  }
 
-.phone-field--inert input {
-  box-sizing: border-box;
-  width: 100%;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--color-white);
-  font-family: var(--font-primary);
-  font-size: 16px;
-  letter-spacing: -0.12px;
-  cursor: default;
-}
+  .phone-field--inert input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--color-white);
+    font-family: var(--font-primary);
+    font-size: 16px;
+    letter-spacing: -0.12px;
+    cursor: default;
+  }
 
-.phone-field--inert input::placeholder {
-  color: #ffffff;
-  opacity: 1;
-}
+  .phone-field--inert input::placeholder {
+    color: #ffffff;
+    opacity: 1;
+  }
 
-.phone-field--inert .phone-field__plus {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  transition: opacity 0.3s ease;
-}
+  .phone-field--inert .phone-field__plus {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+  }
 
-.phone-field--inert .phone-field__plus img {
-  width: 24px;
-  height: 24px;
-}
+  .phone-field--inert .phone-field__plus img {
+    width: 24px;
+    height: 24px;
+  }
 
-.phone-field--inert .phone-field__plus:hover {
-  opacity: 0.7;
-}
+  .phone-field--inert .phone-field__plus:hover {
+    opacity: 0.7;
+  }
 
   .field-error {
     margin: 0;
